@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "970045606424",
+    "project_id": "birdiegame-e44bc",
+    "storage_bucket": "birdiegame-e44bc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:970045606424:android:1d1e9a210038447aa3d16d",
+        "android_client_info": {
+          "package_name": "com.example.bierdygame"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB47V3TZbEyIluzLFP4YAG_4eelAfgS-2w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

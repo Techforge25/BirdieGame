@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function userRole() {
+      return isSignedIn() ? userDoc().data.role : null;
+    }
+
+    function isSuperAdmin() {
+      return userRole() == "super_admin";
+    }
+
+    function emailDocId() {
+      return request.auth.token.email != null
+          ? request.auth.token.email.toLowerCase()
+          : null;
+    }
+
+    match /users/{userId} {
+      allow read, create: if isSignedIn() && request.auth.uid == userId;
+      allow update, delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /role_invites/{emailId} {
+      allow read: if isSuperAdmin() || (isSignedIn() && emailId == emailDocId());
+      allow create, update, delete: if isSuperAdmin();
+      allow delete: if isSignedIn() && emailId == emailDocId();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
