@@ -7,8 +7,8 @@ Widget buildContainerClubAdmin({
   required IconData icon,
   required String title,
   required Color bgColor,
-  required VoidCallback onTap
-}){
+  required VoidCallback onTap,
+}) {
   return Column(
     children: [
       Container(
@@ -16,15 +16,16 @@ Widget buildContainerClubAdmin({
         width: 56.w,
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius: BorderRadius.circular(20.r)
+          borderRadius: BorderRadius.circular(20.r),
         ),
+
         child: GestureDetector(
           onTap: onTap,
-          child: Icon(icon,color: AppColors.white,),
+          child: Icon(icon, color: AppColors.white),
         ),
       ),
-      SizedBox(height: 10.h,),
-      Text(title,style: AppTextStyles.bodySmall,),
+      SizedBox(height: 10.h),
+      Text(title, style: AppTextStyles.bodySmall.copyWith(fontSize: 12)),
     ],
   );
 }

@@ -80,53 +80,53 @@ class GameDetailView extends GetView<ManageClubsController> {
               return SingleChildScrollView(
                 child: Column(
                   children: [
-                  /// ===================
-                  /// TOP GREEN HEADER
-                  /// ===================
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 18.h),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(20),
-                        bottomRight: Radius.circular(20),
+                    /// ===================
+                    /// TOP GREEN HEADER
+                    /// ===================
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 18.h),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(20),
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        GestureDetector(
-                          onTap: onBack,
-                          child: const Icon(
-                            Icons.arrow_back_ios,
-                            color: Colors.white,
-                            size: 20,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          GestureDetector(
+                            onTap: onBack,
+                            child: const Icon(
+                              Icons.arrow_back_ios,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 10.h),
-                        Text(
-                          gameName,
-                          style: AppTextStyles.bodyLarge.copyWith(
-                            color: Colors.white,
-                            fontSize: 20.sp,
-                            fontWeight: FontWeight.w700,
+                          SizedBox(height: 10.h),
+                          Text(
+                            gameName,
+                            style: AppTextStyles.bodyLarge.copyWith(
+                              color: Colors.white,
+                              fontSize: 20.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 4.h),
-                        Text(
-                          "Hole $currentHole of $totalHoles • Par $par",
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14.sp,
+                          SizedBox(height: 4.h),
+                          Text(
+                            "Hole $currentHole of $totalHoles • Par $par",
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14.sp,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 8.h),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _statusChip(status),
-                            Row(
+                          SizedBox(height: 8.h),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _statusChip(status),
+                              Row(
                                 children: [
                                   Icon(
                                     Icons.timer,
@@ -143,248 +143,307 @@ class GameDetailView extends GetView<ManageClubsController> {
                                   ),
                                 ],
                               ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(height: 16.h),
-
-                  /// ===================
-                  /// END GAME BUTTON
-                  /// ===================
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () {},
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: AppColors.darkRed),
-                          backgroundColor: AppColors.flashyRed,
-                          padding: EdgeInsets.symmetric(vertical: 12.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.exit_to_app,
-                                color: Colors.red, size: 18.sp),
-                            SizedBox(width: 8.w),
-                            Text(
-                              "End Game",
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14.sp,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(height: 16.h),
-
-                  /// ===================
-                  /// TEAMS / LEADERBOARD TOGGLE
-                  /// ===================
-                  Obx(() {
-                    return Container(
-                      margin: EdgeInsets.symmetric(horizontal: 16.w),
-                      padding: EdgeInsets.all(4.w),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(22.r),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Row(
-                        children: [
-                          _primaryTab(
-                            title: "Teams",
-                            index: 0,
-                            selectedIndex: controller.selectedGameTab.value,
-                            onChanged: controller.changeGameTab,
-                          ),
-                          _primaryTab(
-                            title: "Leaderboard",
-                            index: 1,
-                            selectedIndex: controller.selectedGameTab.value,
-                            onChanged: controller.changeGameTab,
+                            ],
                           ),
                         ],
                       ),
-                    );
-                  }),
+                    ),
 
-                  SizedBox(height: 16.h),
+                    SizedBox(height: 16.h),
 
-                  Obx(() {
-                    if (controller.selectedGameTab.value == 0) {
-                      return ListView(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16.w),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                _statCard("Teams", totalTeams.toString()),
-                                _statCard("Players", totalPlayers.toString()),
-                                _statCard(
-                                  "Team Birdied",
-                                  "$totalTeamBirdies / $totalHoles",
-                                ),
-                              ],
+                    /// ===================
+                    /// END GAME BUTTON
+                    /// ===================
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: () {},
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: AppColors.darkRed),
+                            backgroundColor: AppColors.flashyRed,
+                            padding: EdgeInsets.symmetric(vertical: 12.h),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.r),
                             ),
                           ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.exit_to_app,
+                                color: Colors.red,
+                                size: 18.sp,
+                              ),
+                              SizedBox(width: 8.w),
+                              Text(
+                                "End Game",
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14.sp,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
 
-                          SizedBox(height: 16.h),
+                    SizedBox(height: 16.h),
 
-                          /// MATCH PROGRESS
-                          Padding(
+                    /// ===================
+                    /// TEAMS / LEADERBOARD TOGGLE
+                    /// ===================
+                    Obx(() {
+                      return Container(
+                        margin: EdgeInsets.symmetric(horizontal: 16.w),
+                        padding: EdgeInsets.all(4.w),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(22.r),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Row(
+                          children: [
+                            _primaryTab(
+                              title: "Teams",
+                              index: 0,
+                              selectedIndex: controller.selectedGameTab.value,
+                              onChanged: controller.changeGameTab,
+                            ),
+                            _primaryTab(
+                              title: "Leaderboard",
+                              index: 1,
+                              selectedIndex: controller.selectedGameTab.value,
+                              onChanged: controller.changeGameTab,
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+
+                    SizedBox(height: 16.h),
+
+                    Obx(() {
+                      if (controller.selectedGameTab.value == 0) {
+                        if (teams.isEmpty) {
+                          return Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16.w),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(height: 8.h),
-                                Container(
-                                  padding: EdgeInsets.all(12.w),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12.r),
-                                    border: Border.all(
-                                      color: Colors.grey.shade200,
-                                    ),
+                            child: Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.symmetric(
+                                vertical: 24.h,
+                                horizontal: 16.w,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12.r),
+                                border: Border.all(color: Colors.grey.shade200),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Nothing to show',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: AppColors.textSecondary,
                                   ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Match Progress",
-                                        style: AppTextStyles.bodyMedium
-                                            .copyWith(
-                                              fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                        return ListView(
+                          shrinkWrap: true,
+                          physics: NeverScrollableScrollPhysics(),
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16.w),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  _statCard("Teams", totalTeams.toString()),
+                                  _statCard("Players", totalPlayers.toString()),
+                                  _statCard(
+                                    "Team Birdied",
+                                    "$totalTeamBirdies / $totalHoles",
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            SizedBox(height: 16.h),
+
+                            /// MATCH PROGRESS
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16.w),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(height: 8.h),
+                                  Container(
+                                    padding: EdgeInsets.all(12.w),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12.r),
+                                      border: Border.all(
+                                        color: Colors.grey.shade200,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Match Progress",
+                                          style: AppTextStyles.bodyMedium
+                                              .copyWith(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                        ),
+                                        SizedBox(height: 15.h),
+                                        LinearProgressIndicator(
+                                          value: matchProgress,
+                                          backgroundColor:
+                                              Colors.green.shade100,
+                                          color: Colors.green,
+                                          minHeight: 8.h,
+                                        ),
+                                        SizedBox(height: 6.h),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                "Teams are working to birdie all $totalHoles holes.",
+                                                style: TextStyle(
+                                                  color: AppColors.textBlack,
+                                                  fontSize: 12.sp,
+                                                ),
+                                              ),
                                             ),
-                                      ),
-                                      SizedBox(height: 15.h),
-                                      LinearProgressIndicator(
-                                        value: matchProgress,
-                                        backgroundColor: Colors.green.shade100,
-                                        color: Colors.green,
-                                        minHeight: 8.h,
-                                      ),
-                                      SizedBox(height: 6.h),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              "Teams are working to birdie all $totalHoles holes.",
+                                            Text(
+                                              "${(matchProgress * 100).round()}%",
                                               style: TextStyle(
                                                 color: AppColors.textBlack,
                                                 fontSize: 12.sp,
                                               ),
                                             ),
-                                          ),
-                                          Text(
-                                            "${(matchProgress * 100).round()}%",
-                                            style: TextStyle(
-                                              color: AppColors.textBlack,
-                                              fontSize: 12.sp,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
 
-                          SizedBox(height: 16.h),
+                            SizedBox(height: 16.h),
 
-                          /// TEAM PROGRESS LIST
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16.w),
-                            child: Column(
-                              children: teamRank.asMap().entries.map((entry) {
-                                return _teamProgressCard(
-                                  entry.value,
-                                  totalHoles,
-                                  onTap: () {
-                                    controller.openTeamDetail(
-                                      entry.value.toMap(rank: entry.key + 1),
-                                    );
-                                  },
-                                );
-                              }).toList(),
+                            /// TEAM PROGRESS LIST
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16.w),
+                              child: Column(
+                                children: teamRank.asMap().entries.map((entry) {
+                                  return _teamProgressCard(
+                                    entry.value,
+                                    totalHoles,
+                                    onTap: () {
+                                      controller.openTeamDetail(
+                                        entry.value.toMap(rank: entry.key + 1),
+                                      );
+                                    },
+                                  );
+                                }).toList(),
+                              ),
                             ),
-                          ),
-                        ],
-                      );
-                    }
-                    return Padding(
+                          ],
+                        );
+                      }
+                      return Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16.w),
                         child: Column(
                           children: [
-                          Row(
-                            children: [
-                              _secondaryTab(
-                                title: "Team Rank",
-                                index: 0,
-                                onChanged: controller.changeLeaderboardTab,
-                                selectedIndex:
-                                    controller.selectedLeaderboardTab.value,
-                              ),
-                              SizedBox(width: 20.w),
-                              _secondaryTab(
-                                title: "Players Rank",
-                                index: 1,
-                                onChanged: controller.changeLeaderboardTab,
-                                selectedIndex:
-                                    controller.selectedLeaderboardTab.value,
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 12.h),
-                          Obx(() {
-                            if (controller.selectedLeaderboardTab.value == 0) {
-                              return Column(
-                                children: teamRank.asMap().entries.map((entry) {
-                                  return _teamRankCard(
-                                    rank: entry.key + 1,
-                                    team: entry.value,
+                            Row(
+                              children: [
+                                _secondaryTab(
+                                  title: "Team Rank",
+                                  index: 0,
+                                  onChanged: controller.changeLeaderboardTab,
+                                  selectedIndex:
+                                      controller.selectedLeaderboardTab.value,
+                                ),
+                                SizedBox(width: 20.w),
+                                _secondaryTab(
+                                  title: "Players Rank",
+                                  index: 1,
+                                  onChanged: controller.changeLeaderboardTab,
+                                  selectedIndex:
+                                      controller.selectedLeaderboardTab.value,
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 12.h),
+                            if (teams.isEmpty)
+                              Container(
+                                width: double.infinity,
+                                padding: EdgeInsets.symmetric(
+                                  vertical: 24.h,
+                                  horizontal: 16.w,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  border: Border.all(
+                                    color: Colors.grey.shade200,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    'Nothing to show',
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            else
+                              Obx(() {
+                                if (controller.selectedLeaderboardTab.value ==
+                                    0) {
+                                  return Column(
+                                    children: teamRank.asMap().entries.map((
+                                      entry,
+                                    ) {
+                                      return _teamRankCard(
+                                        rank: entry.key + 1,
+                                        team: entry.value,
+                                      );
+                                    }).toList(),
                                   );
-                                }).toList(),
-                              );
-                            }
-                            return Column(
-                              children: playerRank.asMap().entries.map((entry) {
-                                return _playerRankCard(
-                                  rank: entry.key + 1,
-                                  player: entry.value,
+                                }
+                                return Column(
+                                  children: playerRank.asMap().entries.map((
+                                    entry,
+                                  ) {
+                                    return _playerRankCard(
+                                      rank: entry.key + 1,
+                                      player: entry.value,
+                                    );
+                                  }).toList(),
                                 );
-                              }).toList(),
-                            );
-                          }),
-                        ],
-                      ),
-                    );
-                  }),
+                              }),
+                          ],
+                        ),
+                      );
+                    }),
 
-                  SizedBox(height: 50.h),
-                ],
-              ),
-            );
+                    SizedBox(height: 50.h),
+                  ],
+                ),
+              );
             });
           },
         ),
@@ -492,74 +551,77 @@ class GameDetailView extends GetView<ManageClubsController> {
   /// =====================================
   /// TEAM PROGRESS CARD
   /// =====================================
-  Widget _teamProgressCard(_TeamData team, int totalHoles,
-      {VoidCallback? onTap}) {
+  Widget _teamProgressCard(
+    _TeamData team,
+    int totalHoles, {
+    VoidCallback? onTap,
+  }) {
     final progress = totalHoles == 0
         ? 0.0
         : ((team.birdies ?? 0) / totalHoles).clamp(0.0, 1.0);
     return GestureDetector(
       onTap: onTap,
       child: Container(
-      margin: EdgeInsets.only(bottom: 12.h),
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: AppColors.primary),
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                team.name ?? "Team",
-                style: AppTextStyles.bodyMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18.sp
+        margin: EdgeInsets.only(bottom: 12.h),
+        padding: EdgeInsets.all(12.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: AppColors.primary),
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  team.name ?? "Team",
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18.sp,
+                  ),
                 ),
-              ),
-              Text(
-                "${team.birdies ?? 0} Birdies",
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
+                Text(
+                  "${team.birdies ?? 0} Birdies",
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 4.h),
-          Text("Players: ${team.members?.length ?? team.playersCount ?? 0}"),
-          SizedBox(height: 4.h),
-          LinearProgressIndicator(
-            value: progress,
-            color: Colors.green,
-            backgroundColor: Colors.green.shade100,
-            minHeight: 8.h,
-          ),
-          SizedBox(height: 4.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Progress: ${(totalHoles - (team.holesRemaining ?? (totalHoles - (team.birdies ?? 0))))} / $totalHoles",
-                style: AppTextStyles.bodySmall.copyWith(fontSize: 12.sp),
-              ),
-              Text(
-                "${(progress * 100).round()}%",
-                style: AppTextStyles.bodySmall.copyWith(fontSize: 12.sp),
-              ),
-            ],
-          ),
-          SizedBox(height: 4.h),
-          Text(
-            "${team.holesRemaining ?? (totalHoles - (team.birdies ?? 0))} Holes Remaining",
-            style: AppTextStyles.bodySmall.copyWith(fontSize: 12.sp),
-          ),
-        ],
+              ],
+            ),
+            SizedBox(height: 4.h),
+            Text("Players: ${team.members?.length ?? team.playersCount ?? 0}"),
+            SizedBox(height: 4.h),
+            LinearProgressIndicator(
+              value: progress,
+              color: Colors.green,
+              backgroundColor: Colors.green.shade100,
+              minHeight: 8.h,
+            ),
+            SizedBox(height: 4.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Progress: ${(totalHoles - (team.holesRemaining ?? (totalHoles - (team.birdies ?? 0))))} / $totalHoles",
+                  style: AppTextStyles.bodySmall.copyWith(fontSize: 12.sp),
+                ),
+                Text(
+                  "${(progress * 100).round()}%",
+                  style: AppTextStyles.bodySmall.copyWith(fontSize: 12.sp),
+                ),
+              ],
+            ),
+            SizedBox(height: 4.h),
+            Text(
+              "${team.holesRemaining ?? (totalHoles - (team.birdies ?? 0))} Holes Remaining",
+              style: AppTextStyles.bodySmall.copyWith(fontSize: 12.sp),
+            ),
+          ],
+        ),
       ),
-    ),
     );
   }
 
@@ -734,12 +796,14 @@ class GameDetailView extends GetView<ManageClubsController> {
       return Center(child: Text("No team selected"));
     }
     final members =
-        (team['members'] as List?)?.whereType<Map<String, dynamic>>().toList() ??
-            [];
+        (team['members'] as List?)
+            ?.whereType<Map<String, dynamic>>()
+            .toList() ??
+        [];
     final birdies = (team['teamBirdies'] ?? team['birdies'] ?? 0) as int? ?? 0;
     final holesRemaining =
         (team['holesRemaining'] ?? (totalHoles - birdies)) as int? ??
-            (totalHoles - birdies);
+        (totalHoles - birdies);
     final teamRank = (team['rank'] ?? 0).toString();
     return ListView(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
@@ -747,8 +811,11 @@ class GameDetailView extends GetView<ManageClubsController> {
         Row(
           children: [
             IconButton(
-              icon: Icon(Icons.arrow_back_ios,
-                  size: 18.sp, color: AppColors.primary),
+              icon: Icon(
+                Icons.arrow_back_ios,
+                size: 18.sp,
+                color: AppColors.primary,
+              ),
               onPressed: onBack,
             ),
             Expanded(
@@ -776,10 +843,7 @@ class GameDetailView extends GetView<ManageClubsController> {
               label: "Holes Remaining",
             ),
             SizedBox(width: 10.w),
-            _smallStatCard(
-              value: teamRank,
-              label: "Team Rank (Live)",
-            ),
+            _smallStatCard(value: teamRank, label: "Team Rank (Live)"),
           ],
         ),
         SizedBox(height: 16.h),
@@ -813,25 +877,6 @@ class GameDetailView extends GetView<ManageClubsController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Text(name, style: AppTextStyles.bodyMedium2),
-                            SizedBox(width: 6.w),
-                            Container(
-                              height: 18.h,
-                              width: 18.h,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.star,
-                                color: Colors.white,
-                                size: 10.sp,
-                              ),
-                            ),
-                          ],
-                        ),
                         SizedBox(height: 4.h),
                         Text(
                           "Last update: $updated",
@@ -850,7 +895,7 @@ class GameDetailView extends GetView<ManageClubsController> {
               ),
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -867,7 +912,8 @@ class GameDetailView extends GetView<ManageClubsController> {
     final teamName = (player['teamName'] ?? 'Team').toString();
     final birdies = (player['birdies'] ?? 0) as int? ?? 0;
     final remaining = (totalHoles - birdies).clamp(0, totalHoles);
-    final holesBirdied = (player['holesBirdied'] as List?)
+    final holesBirdied =
+        (player['holesBirdied'] as List?)
             ?.whereType<num>()
             .map((e) => e.toInt())
             .toList() ??
@@ -878,8 +924,11 @@ class GameDetailView extends GetView<ManageClubsController> {
         Row(
           children: [
             IconButton(
-              icon: Icon(Icons.arrow_back_ios,
-                  size: 18.sp, color: AppColors.primary),
+              icon: Icon(
+                Icons.arrow_back_ios,
+                size: 18.sp,
+                color: AppColors.primary,
+              ),
               onPressed: onBack,
             ),
             Expanded(
@@ -906,10 +955,7 @@ class GameDetailView extends GetView<ManageClubsController> {
                 ),
                 child: Column(
                   children: [
-                    Text(
-                      birdies.toString(),
-                      style: AppTextStyles.bodyMedium2,
-                    ),
+                    Text(birdies.toString(), style: AppTextStyles.bodyMedium2),
                     Text("Birdies", style: AppTextStyles.bodySmall),
                   ],
                 ),
@@ -972,26 +1018,19 @@ class GameDetailView extends GetView<ManageClubsController> {
               ),
               Text(
                 "$birdies",
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Colors.white,
-                ),
+                style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
               ),
               SizedBox(width: 4.w),
               Text(
                 "Total",
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: Colors.white70,
-                ),
+                style: AppTextStyles.bodySmall.copyWith(color: Colors.white70),
               ),
             ],
           ),
         ),
         SizedBox(height: 12.h),
         Text("Score", style: AppTextStyles.bodyMedium),
-        Text(
-          "PAR 4  •  00:28:42",
-          style: AppTextStyles.bodySmall,
-        ),
+        Text("PAR 4  •  00:28:42", style: AppTextStyles.bodySmall),
         SizedBox(height: 12.h),
         Wrap(
           spacing: 10.w,
@@ -1172,11 +1211,6 @@ class _PlayerData {
   });
 
   Map<String, dynamic> toMap() {
-    return {
-      'uid': uid,
-      'name': name,
-      'teamName': teamName,
-      'birdies': birdies,
-    };
+    return {'uid': uid, 'name': name, 'teamName': teamName, 'birdies': birdies};
   }
 }

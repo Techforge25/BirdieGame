@@ -98,74 +98,79 @@ class GolfClubProfilePage extends StatelessWidget {
                             );
                           },
                         ),
-                  SizedBox(height: 16.h),
-                  Text("Status", style: AppTextStyles.bodyMedium),
-                  SizedBox(height: 16.h),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(color: AppColors.borderColor),
-                    ),
-                    child: clubId.isEmpty
-                        ? Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 15,
-                            ),
-                            child: Text("Club Status"),
-                          )
-                        : StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                            stream: controller.clubStream(clubId),
-                            builder: (context, snapshot) {
-                              final data = snapshot.data?.data();
-                              final status =
-                                  (data?['status'] ?? 'active').toString();
-                              final isActive = status == 'active';
-                              return Row(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 15,
-                                    ),
-                                    child: Container(
-                                      height: 14.h,
-                                      width: 14.w,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: isActive
-                                            ? AppColors.primary
-                                            : AppColors.darkRed,
+                  if (isSuperAdmin) ...[
+                    SizedBox(height: 16.h),
+                    Text("Status", style: AppTextStyles.bodyMedium),
+                    SizedBox(height: 16.h),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(color: AppColors.borderColor),
+                      ),
+                      child: clubId.isEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 15,
+                              ),
+                              child: Text("Club Status"),
+                            )
+                          : StreamBuilder<
+                              DocumentSnapshot<Map<String, dynamic>>>(
+                              stream: controller.clubStream(clubId),
+                              builder: (context, snapshot) {
+                                final data = snapshot.data?.data();
+                                final status =
+                                    (data?['status'] ?? 'active').toString();
+                                final isActive = status == 'active';
+                                return Row(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 15,
+                                      ),
+                                      child: Container(
+                                        height: 14.h,
+                                        width: 14.w,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: isActive
+                                              ? AppColors.primary
+                                              : AppColors.darkRed,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  Text("Club Status"),
-                                  Spacer(),
-                                  Switch(
-                                    value: isActive,
-                                    onChanged: (!isSuperAdmin || clubId.isEmpty)
-                                        ? null
-                                        : (value) {
-                                            controller.setClubStatus(
-                                                clubId, value);
-                                          },
-                                    padding:
-                                        EdgeInsets.symmetric(horizontal: 20),
-                                    trackColor:
-                                        WidgetStateProperty.resolveWith(
-                                      (states) {
-                                        return isActive
-                                            ? AppColors.primary
-                                            : AppColors.scaffoldBackground;
-                                      },
+                                    Text("Club Status"),
+                                    Spacer(),
+                                    Switch(
+                                      value: isActive,
+                                      onChanged:
+                                          (!isSuperAdmin || clubId.isEmpty)
+                                              ? null
+                                              : (value) {
+                                                  controller.setClubStatus(
+                                                      clubId, value);
+                                                },
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                      ),
+                                      trackColor:
+                                          WidgetStateProperty.resolveWith(
+                                        (states) {
+                                          return isActive
+                                              ? AppColors.primary
+                                              : AppColors.scaffoldBackground;
+                                        },
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                  ),
+                                  ],
+                                );
+                              },
+                            ),
+                    ),
+                  ],
                   SizedBox(height: 16.h),
                   Text(
                     "Club Admins",
@@ -292,80 +297,142 @@ class GolfClubProfilePage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16.r),
                       color: AppColors.flashyGreen,
                     ),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 15.0,
-                            vertical: 10,
+                    child: clubId.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 15.0,
+                              vertical: 10,
+                            ),
+                            child: Text(
+                              "No club information available",
+                              style: AppTextStyles.bodySmall,
+                            ),
+                          )
+                        : StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                            stream: controller.clubStream(clubId),
+                            builder: (context, snapshot) {
+                              final data = snapshot.data?.data() ?? {};
+                              final location =
+                                  (data['location'] ?? clubLocation ?? '')
+                                      .toString();
+                              final createdAt = data['createdAt'];
+                              DateTime? joinedDate;
+                              if (createdAt is Timestamp) {
+                                joinedDate = createdAt.toDate();
+                              }
+                              final totalGames =
+                                  (data['totalGames'] ?? 0).toString();
+                              return StreamBuilder<
+                                  QuerySnapshot<Map<String, dynamic>>>(
+                                stream: FirebaseFirestore.instance
+                                    .collection('clubs')
+                                    .doc(clubId)
+                                    .collection('club_teams')
+                                    .snapshots(),
+                                builder: (context, teamsSnapshot) {
+                                  int totalPlayers = 0;
+                                  final docs = teamsSnapshot.data?.docs ?? [];
+                                  for (final doc in docs) {
+                                    final members = doc.data()['members'];
+                                    if (members is List) {
+                                      totalPlayers += members.length;
+                                    }
+                                  }
+                                  return Column(
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 15.0,
+                                          vertical: 10,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  "location",
+                                                  style: AppTextStyles.bodySmall,
+                                                ),
+                                                Text(
+                                                  location.isEmpty
+                                                      ? "Unknown"
+                                                      : location,
+                                                  style:
+                                                      AppTextStyles.bodyMedium,
+                                                ),
+                                              ],
+                                            ),
+                                            Spacer(),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  "Joined Date",
+                                                  style: AppTextStyles.bodySmall,
+                                                ),
+                                                Text(
+                                                  joinedDate == null
+                                                      ? "Unknown"
+                                                      : DateFormat('dd-MM-yyyy')
+                                                          .format(joinedDate),
+                                                  style:
+                                                      AppTextStyles.bodyMedium,
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 15.0,
+                                          vertical: 10,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  "Total Games",
+                                                  style: AppTextStyles.bodySmall,
+                                                ),
+                                                Text(
+                                                  totalGames,
+                                                  style:
+                                                      AppTextStyles.bodyMedium,
+                                                ),
+                                              ],
+                                            ),
+                                            Spacer(),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  "Total Player",
+                                                  style: AppTextStyles.bodySmall,
+                                                ),
+                                                Text(
+                                                  totalPlayers.toString(),
+                                                  style:
+                                                      AppTextStyles.bodyMedium,
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
                           ),
-                          child: Row(
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text("location",
-                                      style: AppTextStyles.bodySmall),
-                                  Text(
-                                    clubLocation ?? "Unknown",
-                                    style: AppTextStyles.bodyMedium,
-                                  ),
-                                ],
-                              ),
-                              Spacer(),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Joined Date",
-                                    style: AppTextStyles.bodySmall,
-                                  ),
-                                  Text(
-                                    DateFormat(
-                                      'dd-MM-yyyy',
-                                    ).format(DateTime.now()).toString(),
-                                    style: AppTextStyles.bodyMedium,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 15.0,
-                            vertical: 10,
-                          ),
-                          child: Row(
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Total Games",
-                                    style: AppTextStyles.bodySmall,
-                                  ),
-                                  Text("1,124",
-                                      style: AppTextStyles.bodyMedium),
-                                ],
-                              ),
-                              Spacer(),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Total Player",
-                                    style: AppTextStyles.bodySmall,
-                                  ),
-                                  Text("225",
-                                      style: AppTextStyles.bodyMedium),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
                   if (!isSuperAdmin) ...[
                     SizedBox(height: 16.h),

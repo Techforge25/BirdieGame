@@ -28,6 +28,7 @@ class AppColors {
   static Color darkPurple = Color(0xff8B5CF6);
   static Color flashyblue = Color(0xffDBF1FF);
   static Color darkRed = Color(0xffDC2626);
+  static Color seaGreen = Color(0xff0D9488);
   static Color darkBlue = Color(0xff3B82F6);
   static Color textFieldBgColor = Color(0xffF2F2F2);
 }

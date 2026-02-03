@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image/image.dart' as img;
 import 'dart:convert';
 import 'dart:io';
 
@@ -34,6 +35,9 @@ class ClubEditController extends GetxController {
   final RxnString logoName = RxnString();
   final RxnString logoPath = RxnString();
   final RxnString logoBase64 = RxnString();
+  final RxnString adminPhotoName = RxnString();
+  final RxnString adminPhotoPath = RxnString();
+  final RxnString adminPhotoBase64 = RxnString();
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -65,7 +69,39 @@ class ClubEditController extends GetxController {
     logoPath.value = picked.path;
     logoName.value = picked.name;
     final bytes = await File(picked.path).readAsBytes();
-    logoBase64.value = base64Encode(bytes);
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) {
+      logoBase64.value = base64Encode(bytes);
+      return;
+    }
+    final resized = img.copyResize(
+      decoded,
+      width: decoded.width > 600 ? 600 : decoded.width,
+    );
+    final jpgBytes = img.encodeJpg(resized, quality: 70);
+    logoBase64.value = base64Encode(jpgBytes);
+  }
+
+  Future<void> pickAdminPhoto() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked == null) {
+      return;
+    }
+    adminPhotoPath.value = picked.path;
+    adminPhotoName.value = picked.name;
+    final bytes = await File(picked.path).readAsBytes();
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) {
+      adminPhotoBase64.value = base64Encode(bytes);
+      return;
+    }
+    final resized = img.copyResize(
+      decoded,
+      width: decoded.width > 300 ? 300 : decoded.width,
+    );
+    final jpgBytes = img.encodeJpg(resized, quality: 70);
+    adminPhotoBase64.value = base64Encode(jpgBytes);
   }
 
   Future<void> saveChanges() async {
@@ -80,11 +116,16 @@ class ClubEditController extends GetxController {
       Get.snackbar("Error", "Club name and location are required");
       return;
     }
+    final base64Logo = logoBase64.value ?? '';
+    if (base64Logo.isNotEmpty && base64Logo.length > 700000) {
+      Get.snackbar("Image too large", "Please pick a smaller image");
+      return;
+    }
     await _firestore.collection('clubs').doc(id).set({
       'name': name,
       'location': location,
       'logoPath': logoPath.value,
-      'logoBase64': logoBase64.value,
+      'logoBase64': base64Logo,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
     Get.back();
@@ -111,12 +152,18 @@ class ClubEditController extends GetxController {
     }
     final controller = Get.find<AddClubsController>();
     if (isNewAdmin.value) {
+      final photoBase64 = adminPhotoBase64.value ?? '';
+      if (photoBase64.isNotEmpty && photoBase64.length > 700000) {
+        Get.snackbar("Image too large", "Please pick a smaller image");
+        return;
+      }
       await controller.createClubAdmin(
         name: adminNameController.text.trim(),
         email: adminEmailController.text.trim().toLowerCase(),
         password: adminPasswordController.text.trim(),
         clubId: id,
         clubName: clubNameController.text.trim(),
+        photoBase64: photoBase64,
       );
     } else {
       final existing = await controller.attachExistingClubAdminByEmail(
@@ -132,6 +179,9 @@ class ClubEditController extends GetxController {
     adminNameController.clear();
     adminEmailController.clear();
     adminPasswordController.clear();
+    adminPhotoName.value = null;
+    adminPhotoPath.value = null;
+    adminPhotoBase64.value = null;
     showAddAdminForm.value = false;
   }
 

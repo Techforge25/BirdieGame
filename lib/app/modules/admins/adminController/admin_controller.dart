@@ -21,6 +21,12 @@ class AdminController extends GetxController {
   String adminId = '';
   String clubId = '';
   bool _loaded = false;
+  bool isSuperAdmin = false;
+  final clubs = <Map<String, String>>[].obs;
+  final clubsLoading = false.obs;
+  final selectedClubId = RxnString();
+  final selectedClubName = RxnString();
+  bool _clubsLoaded = false;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   void loadFromArgs(Map<String, dynamic>? args) {
@@ -32,6 +38,10 @@ class AdminController extends GetxController {
     clubNameController.text = (args['clubName'] ?? '').toString();
     roleController.text = (args['role'] ?? '').toString();
     photoBase64.value = (args['photoBase64'] ?? '').toString();
+    if (clubId.isNotEmpty) {
+      selectedClubId.value = clubId;
+      selectedClubName.value = clubNameController.text;
+    }
 
     if (args.containsKey('isActive')) {
       status.value = args['isActive'] == true;
@@ -43,6 +53,48 @@ class AdminController extends GetxController {
     _loaded = true;
   }
 
+  Future<void> loadClubsIfNeeded() async {
+    if (_clubsLoaded || clubsLoading.value) return;
+    clubsLoading.value = true;
+    try {
+      final snapshot = await _firestore.collection('clubs').get();
+      final items = snapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'id': doc.id,
+          'name': (data['name'] ?? '').toString(),
+        };
+      }).toList();
+      items.sort((a, b) => (a['name'] ?? '').compareTo(b['name'] ?? ''));
+      clubs.assignAll(items);
+      _clubsLoaded = true;
+    } finally {
+      clubsLoading.value = false;
+    }
+  }
+
+  void setSelectedClub(String? id) {
+    final value = (id ?? '').trim();
+    if (value.isEmpty) {
+      selectedClubId.value = '';
+      selectedClubName.value = '';
+      clubNameController.text = '';
+      return;
+    }
+    String name = '';
+    for (final club in clubs) {
+      if (club['id'] == value) {
+        name = (club['name'] ?? '').toString();
+        break;
+      }
+    }
+    selectedClubId.value = value;
+    selectedClubName.value = name;
+    if (name.isNotEmpty) {
+      clubNameController.text = name;
+    }
+  }
+
   Future<void> saveChanges() async {
     if (adminId.isEmpty) {
       Get.snackbar("Error", "Missing admin id");
@@ -51,19 +103,50 @@ class AdminController extends GetxController {
     final name = nameController.text.trim();
     final email = emailController.text.trim().toLowerCase();
     final clubName = clubNameController.text.trim();
+    final nextClubId =
+        isSuperAdmin ? (selectedClubId.value ?? clubId) : clubId;
+    final nextClubName =
+        isSuperAdmin ? (selectedClubName.value ?? clubName) : clubName;
+    final allowPhotoUpdate = !isSuperAdmin;
 
     try {
-      await _firestore.collection('users').doc(adminId).set({
+      final userUpdate = <String, dynamic>{
         'displayName': name,
         'email': email,
-        'clubName': clubName,
         'isActive': status.value,
         'status': status.value ? 'active' : 'inactive',
-        if (photoBase64.value.isNotEmpty) 'photoBase64': photoBase64.value,
+        if (allowPhotoUpdate && photoBase64.value.isNotEmpty)
+          'photoBase64': photoBase64.value,
         'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      };
+      if (nextClubId.isEmpty) {
+        userUpdate['clubId'] = FieldValue.delete();
+        userUpdate['clubName'] = FieldValue.delete();
+      } else {
+        userUpdate['clubId'] = nextClubId;
+        userUpdate['clubName'] = nextClubName;
+      }
+      await _firestore
+          .collection('users')
+          .doc(adminId)
+          .set(userUpdate, SetOptions(merge: true));
 
-      if (clubId.isNotEmpty && clubName.isNotEmpty) {
+      if (isSuperAdmin && nextClubId != clubId) {
+        final entry = {'uid': adminId, 'name': name, 'email': email};
+        if (clubId.isNotEmpty) {
+          await _firestore.collection('clubs').doc(clubId).set({
+            'admins': FieldValue.arrayRemove([entry]),
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+        }
+        if (nextClubId.isNotEmpty) {
+          await _firestore.collection('clubs').doc(nextClubId).set({
+            'admins': FieldValue.arrayUnion([entry]),
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+        }
+        clubId = nextClubId;
+      } else if (clubId.isNotEmpty && clubName.isNotEmpty) {
         await _firestore.collection('clubs').doc(clubId).set({
           'name': clubName,
           'updatedAt': FieldValue.serverTimestamp(),
@@ -73,20 +156,29 @@ class AdminController extends GetxController {
           roleController.text.trim().toLowerCase().isEmpty
               ? 'club_admin'
               : roleController.text.trim().toLowerCase();
+      final profileUpdate = <String, dynamic>{
+        'displayName': name,
+        'email': email,
+        'clubName': nextClubName,
+        'role': normalizedRole,
+        'status': status.value ? 'active' : 'inactive',
+        if (allowPhotoUpdate && photoBase64.value.isNotEmpty)
+          'photoBase64': photoBase64.value,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      if (nextClubId.isEmpty) {
+        profileUpdate['clubId'] = FieldValue.delete();
+        profileUpdate['clubName'] = FieldValue.delete();
+      } else {
+        profileUpdate['clubId'] = nextClubId;
+        profileUpdate['clubName'] = nextClubName;
+      }
       await _firestore
           .collection('users')
           .doc(adminId)
           .collection(normalizedRole)
           .doc('profile')
-          .set({
-        'displayName': name,
-        'email': email,
-        'clubName': clubName,
-        'role': normalizedRole,
-        'status': status.value ? 'active' : 'inactive',
-        if (photoBase64.value.isNotEmpty) 'photoBase64': photoBase64.value,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+          .set(profileUpdate, SetOptions(merge: true));
 
       final authUser = FirebaseAuth.instance.currentUser;
       if (authUser != null && authUser.uid == adminId) {
@@ -317,7 +409,7 @@ class AdminController extends GetxController {
                     }
 
                     Get.back();
-                    Get.snackbar("Deleted", "Admin removed from database");
+                    Get.snackbar("Deleted", "Admin removed");
                   } catch (e) {
                     Get.snackbar("Error", "Failed to delete admin");
                   }

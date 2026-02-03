@@ -33,8 +33,6 @@ class AddClubsController extends GetxController {
   final RxnString logoBase64 = RxnString();
 
   @override
-  
-
   @override
   void onClose() {
     clubNameController.dispose();
@@ -113,17 +111,17 @@ class AddClubsController extends GetxController {
         password: password,
       );
       final uid = credential.user?.uid;
-        if (uid != null) {
-          await _firestore.collection('users').doc(uid).set({
-            'email': email,
-            'displayName': name,
-            'role': 'club_admin',
-            'clubName': clubName,
-            'isActive': true,
-            'status': 'active',
-            'updatedAt': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
-       
+      if (uid != null) {
+        await _firestore.collection('users').doc(uid).set({
+          'email': email,
+          'displayName': name,
+          'role': 'club_admin',
+          'clubName': clubName,
+          'isActive': true,
+          'status': 'active',
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+
         admins.add(AdminModel(uid: uid, name: name, email: email));
       }
       await secondaryAuth.signOut();
@@ -136,7 +134,7 @@ class AddClubsController extends GetxController {
     nameController.clear();
     emailController.clear();
     passwordController.clear();
-    Get.snackbar("Admin created", "Admin account created for $email");
+    Get.snackbar("Admin created", "Admin account created for $clubName");
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> pendingInvitesStream() {
@@ -145,8 +143,6 @@ class AddClubsController extends GetxController {
         .orderBy('createdAt', descending: true)
         .snapshots();
   }
-
- 
 
   Future<void> resendInvite(String email) async {
     final normalizedEmail = email.trim().toLowerCase();
@@ -194,7 +190,7 @@ class AddClubsController extends GetxController {
             'clubId': docRef.id,
             'clubName': clubName,
           }, SetOptions(merge: true));
-          
+
           adminEntries.add({
             'uid': admin.uid,
             'name': admin.name,
@@ -212,7 +208,7 @@ class AddClubsController extends GetxController {
               'clubId': docRef.id,
               'clubName': clubName,
             }, SetOptions(merge: true));
-            
+
             adminEntries.add({
               'uid': uid,
               'name': admin.name,
@@ -299,19 +295,12 @@ class AddClubsController extends GetxController {
     await _upsertRoleProfile(
       uid: uid,
       role: 'club_admin',
-      data: {
-        'clubId': FieldValue.delete(),
-        'clubName': FieldValue.delete(),
-      },
+      data: {'clubId': FieldValue.delete(), 'clubName': FieldValue.delete()},
     );
 
     await _firestore.collection('clubs').doc(clubId).set({
       'admins': FieldValue.arrayRemove([
-        {
-          'uid': uid,
-          'name': name,
-          'email': email.toLowerCase(),
-        }
+        {'uid': uid, 'name': name, 'email': email.toLowerCase()},
       ]),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
@@ -325,6 +314,7 @@ class AddClubsController extends GetxController {
     required String password,
     required String clubId,
     required String clubName,
+    String? photoBase64,
   }) async {
     if (name.isEmpty || email.isEmpty) {
       Get.snackbar("Error", "Name and email are required");
@@ -353,6 +343,7 @@ class AddClubsController extends GetxController {
       );
       final uid = credential.user?.uid;
       if (uid != null) {
+        final normalizedPhoto = (photoBase64 ?? '').trim();
         await _firestore.collection('users').doc(uid).set({
           'email': email,
           'displayName': name,
@@ -361,6 +352,7 @@ class AddClubsController extends GetxController {
           'clubName': clubName,
           'isActive': true,
           'status': 'active',
+          if (normalizedPhoto.isNotEmpty) 'photoBase64': normalizedPhoto,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
         await _upsertRoleProfile(
@@ -373,16 +365,13 @@ class AddClubsController extends GetxController {
             'clubName': clubName,
             'isActive': true,
             'status': 'active',
+            if (normalizedPhoto.isNotEmpty) 'photoBase64': normalizedPhoto,
           },
         );
-        
+
         await _firestore.collection('clubs').doc(clubId).set({
           'admins': FieldValue.arrayUnion([
-            {
-              'uid': uid,
-              'name': name,
-              'email': email.toLowerCase(),
-            }
+            {'uid': uid, 'name': name, 'email': email.toLowerCase()},
           ]),
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
@@ -423,7 +412,7 @@ class AddClubsController extends GetxController {
         .get();
 
     if (snapshot.docs.isEmpty) {
-      Get.snackbar("Error", "No existing club admin found for $normalizedEmail");
+      Get.snackbar("Error", "No existing club admin found");
       return null;
     }
 
@@ -465,11 +454,7 @@ class AddClubsController extends GetxController {
     );
     await _firestore.collection('clubs').doc(clubId).set({
       'admins': FieldValue.arrayUnion([
-        {
-          'uid': uid,
-          'name': name,
-          'email': normalizedEmail,
-        }
+        {'uid': uid, 'name': name, 'email': normalizedEmail},
       ]),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
@@ -520,13 +505,12 @@ class AddClubsController extends GetxController {
         .collection(normalizedRole)
         .doc('profile')
         .set({
-      ...data,
-      'role': normalizedRole,
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+          ...data,
+          'role': normalizedRole,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
   }
 
- 
   void _resetFormState() {
     clubNameController.clear();
     clubLocationController.clear();

@@ -7,6 +7,7 @@ class GameModel {
   final String clubId;
   final String name;
   final String date;
+  final String time;
   final String passkey;
   final GameStatus status;
 
@@ -25,6 +26,7 @@ class GameModel {
     this.clubId = '',
     required this.name,
     required this.date,
+    this.time = '',
     required this.passkey,
     required this.status,
     this.currentHole = 1,
@@ -42,6 +44,7 @@ class GameModel {
       'clubId': clubId,
       'name': name,
       'date': date,
+      'time': time,
       'passkey': passkey,
       'status': status.name,
     };
@@ -58,6 +61,7 @@ class GameModel {
       clubId: (data['clubId'] ?? '').toString(),
       name: (data['name'] ?? 'Game').toString(),
       date: (data['date'] ?? '').toString(),
+      time: (data['time'] ?? '').toString(),
       passkey: (data['passkey'] ?? '').toString(),
       status: parsedStatus,
     );

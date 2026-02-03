@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 class ManageClubsController extends GetxController {
   RxInt selectedTab = 0.obs;
@@ -19,8 +20,10 @@ class ManageClubsController extends GetxController {
   RxList<GameModel> games = <GameModel>[].obs;
   final RxnString _clubId = RxnString();
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _gamesSub;
+  Timer? _statusTimer;
+  Worker? _gamesWorker;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+
   RxBool showGameDetail = false.obs;
   Rx<GameModel?> selectedGame = Rx<GameModel?>(null);
 
@@ -31,20 +34,28 @@ class ManageClubsController extends GetxController {
       searchQuery.value = searchController.text.trim().toLowerCase();
     });
     _loadClubIdAndListen();
+    _statusTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _activateDueDraftsFromList(),
+    );
+    _gamesWorker = ever<List<GameModel>>(
+      games,
+      (_) => _activateDueDraftsFromList(),
+    );
   }
 
   @override
   void onClose() {
     _gamesSub?.cancel();
-    searchController.dispose();
+    _statusTimer?.cancel();
+    _gamesWorker?.dispose();
     super.onClose();
   }
 
   Future<void> _loadClubIdAndListen() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    final userDoc =
-        await _firestore.collection('users').doc(user.uid).get();
+    final userDoc = await _firestore.collection('users').doc(user.uid).get();
     _clubId.value = userDoc.data()?['clubId']?.toString();
     final clubId = _clubId.value;
     if (clubId == null || clubId.isEmpty) return;
@@ -54,10 +65,124 @@ class ManageClubsController extends GetxController {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .listen((snapshot) {
-      games.value = snapshot.docs
-          .map((doc) => GameModel.fromMap(doc.id, doc.data()))
-          .toList();
-    });
+          final docs = snapshot.docs;
+          games.value = docs
+              .map((doc) => GameModel.fromMap(doc.id, doc.data()))
+              .toList();
+          _autoActivateScheduledGames(docs);
+        });
+  }
+
+  Future<void> _autoActivateScheduledGames(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) async {
+    final now = DateTime.now();
+    for (final doc in docs) {
+      final data = doc.data();
+      final status = (data['status'] ?? '').toString();
+      if (status != GameStatus.draft.name) {
+        continue;
+      }
+      DateTime? scheduledAt;
+      final scheduledRaw = data['scheduledAt'];
+      if (scheduledRaw is Timestamp) {
+        scheduledAt = scheduledRaw.toDate();
+      } else {
+        final dateStr = (data['date'] ?? '').toString();
+        final timeStr = (data['time'] ?? '').toString();
+        if (dateStr.isNotEmpty) {
+          try {
+            final date = DateFormat('yyyy-MM-dd').parse(dateStr);
+            if (timeStr.isNotEmpty) {
+              final time = DateFormat('hh:mm a').parse(timeStr);
+              scheduledAt = DateTime(
+                date.year,
+                date.month,
+                date.day,
+                time.hour,
+                time.minute,
+              );
+            } else {
+              scheduledAt = date;
+            }
+          } catch (_) {
+            scheduledAt = null;
+          }
+        }
+      }
+      if (scheduledAt != null && !scheduledAt.isAfter(now)) {
+        await _firestore.collection('games').doc(doc.id).set({
+          'status': GameStatus.active.name,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+    }
+  }
+
+  Future<void> _activateDueDraftsFromList() async {
+    if (games.isEmpty) return;
+    final now = DateTime.now();
+    final dueGames = <GameModel>[];
+    for (final game in games) {
+      if (game.status != GameStatus.draft) continue;
+      final scheduledAt = _resolveScheduledAt(game);
+      if (scheduledAt != null && !scheduledAt.isAfter(now)) {
+        dueGames.add(game);
+      }
+    }
+    if (dueGames.isEmpty) return;
+    for (final game in dueGames) {
+      if (game.id.isEmpty) continue;
+      await _firestore.collection('games').doc(game.id).set({
+        'status': GameStatus.active.name,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      _setGameStatusLocal(game.id, GameStatus.active);
+    }
+  }
+
+  DateTime? _resolveScheduledAt(GameModel game) {
+    if (game.date.isEmpty) return null;
+    try {
+      final date = DateFormat('yyyy-MM-dd').parse(game.date);
+      if (game.time.isNotEmpty) {
+        final time = DateFormat('hh:mm a').parse(game.time);
+        return DateTime(
+          date.year,
+          date.month,
+          date.day,
+          time.hour,
+          time.minute,
+        );
+      }
+      return date;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _setGameStatusLocal(String id, GameStatus status) {
+    final idx = games.indexWhere((g) => g.id == id);
+    if (idx < 0) return;
+    final g = games[idx];
+    games[idx] = GameModel(
+      id: g.id,
+      clubId: g.clubId,
+      name: g.name,
+      date: g.date,
+      time: g.time,
+      passkey: g.passkey,
+      status: status,
+      currentHole: g.currentHole,
+      totalHoles: g.totalHoles,
+      par: g.par,
+      totalTeams: g.totalTeams,
+      totalPlayers: g.totalPlayers,
+      birdiedTeams: g.birdiedTeams,
+      matchProgress: g.matchProgress,
+      teams: g.teams,
+    );
+    games.refresh();
   }
 
   Future<String?> _ensureClubId() async {
@@ -88,6 +213,9 @@ class ManageClubsController extends GetxController {
     if (clubGame != null && clubGame['teams'] != null) {
       gamePayload['teams'] = clubGame['teams'];
     }
+    if (clubGame != null && clubGame['scheduledAt'] != null) {
+      gamePayload['scheduledAt'] = clubGame['scheduledAt'];
+    }
     final gameRef = await _firestore.collection('games').add(gamePayload);
     if (!games.any((g) => g.id == gameRef.id)) {
       games.insert(
@@ -97,6 +225,7 @@ class ManageClubsController extends GetxController {
           clubId: clubId,
           name: game.name,
           date: game.date,
+          time: game.time,
           passkey: game.passkey,
           status: game.status,
         ),
@@ -107,15 +236,13 @@ class ManageClubsController extends GetxController {
       'gameId': gameRef.id,
       'name': game.name,
       'date': game.date,
+      'time': game.time,
       'passkey': game.passkey,
       'status': game.status.name,
     };
     final payloadForArray = Map<String, dynamic>.from(payload);
     await _firestore.collection('clubs').doc(clubId).set({
-      'game': {
-        ...payload,
-        'createdAt': FieldValue.serverTimestamp(),
-      },
+      'game': {...payload, 'createdAt': FieldValue.serverTimestamp()},
       'games': FieldValue.arrayUnion([payloadForArray]),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
@@ -125,9 +252,11 @@ class ManageClubsController extends GetxController {
     selectedTab.value = index;
     selectedClub.value = null;
   }
-void changeGameTab(int index) {
+
+  void changeGameTab(int index) {
     selectedGameTab.value = index;
   }
+
   void changeLeaderboardTab(int index) {
     selectedLeaderboardTab.value = index;
   }
@@ -152,6 +281,7 @@ void changeGameTab(int index) {
     gameDetailPage.value = 1;
     selectedPlayerDetail.value = null;
   }
+
   void addGame(GameModel game) {
     games.insert(0, game); // latest on top
   }
@@ -215,9 +345,7 @@ void changeGameTab(int index) {
     final query = searchQuery.value;
     Iterable<GameModel> source = games;
     if (query.isNotEmpty) {
-      source = source.where(
-        (g) => g.name.toLowerCase().contains(query),
-      );
+      source = source.where((g) => g.name.toLowerCase().contains(query));
     }
     switch (selectedTab.value) {
       case 1:

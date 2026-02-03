@@ -1,9 +1,8 @@
-
-  
-  import 'package:flutter/material.dart';
+import 'package:bierdygame/app/theme/app_colors.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-  Widget buildCustomGrid({
+Widget buildCustomGrid({
   required int activeGames,
   required int totalTeams,
   required int totalPlayers,
@@ -31,7 +30,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
         title: "Total Players",
         value: totalPlayers.toString(),
         imagePath: "assets/images/excited_banda.png",
-
       ),
       statCard(
         title: "Completed",
@@ -41,7 +39,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
     ],
   );
 }
-
 
 Widget statCard({
   required String title,
@@ -53,14 +50,14 @@ Widget statCard({
     height: 151,
     width: 181,
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: AppColors.white,
       borderRadius: BorderRadius.circular(16),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.04),
+          color: AppColors.textBlack.withOpacity(0.04),
           blurRadius: 15,
           offset: const Offset(0, 5),
-        )
+        ),
       ],
     ),
     child: ClipRRect(
@@ -74,7 +71,10 @@ Widget statCard({
             bottom: 0,
             child: Container(
               width: 7,
-              color: stripColor,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: stripColor,
+              ),
             ),
           ),
 
@@ -109,10 +109,7 @@ Widget statCard({
           Positioned(
             bottom: -40,
             right: 0,
-            child: Image.asset(
-              imagePath,
-              height: 140.h,
-            ),
+            child: Image.asset(imagePath, height: 140.h),
           ),
         ],
       ),

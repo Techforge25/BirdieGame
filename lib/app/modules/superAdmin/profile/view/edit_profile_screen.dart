@@ -36,10 +36,10 @@ class EditProfileScreen extends GetView<EditProfileController> {
                   () {
                     ImageProvider avatarProvider =
                         const AssetImage("assets/images/white_logo.png");
-                    if (controller.pickedImagePath.value.isNotEmpty) {
-                      avatarProvider = FileImage(
-                        File(controller.pickedImagePath.value),
-                      );
+                    if (controller.pickedImagePath.value.isNotEmpty &&
+                        File(controller.pickedImagePath.value).existsSync()) {
+                      avatarProvider =
+                          FileImage(File(controller.pickedImagePath.value));
                     } else if (controller.photoBase64.value.isNotEmpty) {
                       avatarProvider = MemoryImage(
                         base64Decode(controller.photoBase64.value),

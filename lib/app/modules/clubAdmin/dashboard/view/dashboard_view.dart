@@ -6,6 +6,7 @@ import 'package:bierdygame/app/modules/clubAdmin/dashboard/widgets/stat_card.dar
 import 'package:bierdygame/app/theme/app_colors.dart';
 import 'package:bierdygame/app/theme/app_text_styles.dart';
 import 'package:bierdygame/app/widgets/custom_profile_bar.dart';
+import 'package:bierdygame/app/routes/app_routes.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -41,12 +42,13 @@ class ClubAdminDashboard extends StatelessWidget {
                       .snapshots(),
                   builder: (context, userSnapshot) {
                     final userData = userSnapshot.data?.data() ?? {};
-                    final name = (userData['displayName'] ??
-                            userData['name'] ??
-                            'Club Admin')
+                    final name =
+                        (userData['displayName'] ??
+                                userData['name'] ??
+                                'Club Admin')
+                            .toString();
+                    final photoBase64 = (userData['photoBase64'] ?? '')
                         .toString();
-                    final photoBase64 =
-                        (userData['photoBase64'] ?? '').toString();
                     return CustomProfileBar(
                       name: name,
                       onTap: () {},
@@ -73,6 +75,16 @@ class ClubAdminDashboard extends StatelessWidget {
                       title: "Create Game",
                     ),
                     buildContainerClubAdmin(
+                      icon: Icons.golf_course_rounded,
+                      bgColor: AppColors.seaGreen,
+                      onTap: () {
+                        final nav = Get.find<ClubAdminBottomNavController>();
+                        if (!nav.guardClubAccess()) return;
+                        nav.changeTab(3);
+                      },
+                      title: "Create Team",
+                    ),
+                    buildContainerClubAdmin(
                       icon: CupertinoIcons.game_controller,
                       bgColor: AppColors.darkBlue,
                       onTap: () {
@@ -88,7 +100,7 @@ class ClubAdminDashboard extends StatelessWidget {
                       onTap: () {
                         final nav = Get.find<ClubAdminBottomNavController>();
                         if (!nav.guardClubAccess()) return;
-                        nav.changeTab(3);
+                        Get.toNamed(Routes.SCORES);
                       },
                       title: "LeaderBoard",
                     ),
@@ -125,49 +137,58 @@ class ClubAdminDashboard extends StatelessWidget {
                     }
                     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                       stream: FirebaseFirestore.instance
-                          .collection('games')
-                          .where('clubId', isEqualTo: clubId)
+                          .collection('clubs')
+                          .doc(clubId)
+                          .collection('club_teams')
                           .snapshots(),
-                      builder: (context, gamesSnapshot) {
-                        if (gamesSnapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Center(child: CircularProgressIndicator());
-                        }
-                        final games = gamesSnapshot.data?.docs ?? [];
-                        int activeGames = 0;
-                        int completedGames = 0;
-                        int totalTeams = 0;
+                      builder: (context, teamsSnapshot) {
                         int totalPlayers = 0;
+                        final teamDocs = teamsSnapshot.data?.docs ?? [];
+                        for (final doc in teamDocs) {
+                          final members = doc.data()['members'];
+                          if (members is List) {
+                            totalPlayers += members.length;
+                          }
+                        }
+                        return StreamBuilder<
+                            QuerySnapshot<Map<String, dynamic>>>(
+                          stream: FirebaseFirestore.instance
+                              .collection('games')
+                              .where('clubId', isEqualTo: clubId)
+                              .snapshots(),
+                          builder: (context, gamesSnapshot) {
+                            if (gamesSnapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return Center(child: CircularProgressIndicator());
+                            }
+                            final games = gamesSnapshot.data?.docs ?? [];
+                            int activeGames = 0;
+                            int completedGames = 0;
+                            int totalTeams = 0;
 
-                        for (final doc in games) {
-                          final data = doc.data();
-                          final status =
-                              (data['status'] ?? 'active').toString();
-                          if (status == 'active') {
-                            activeGames++;
-                          }
-                          if (status == 'completed') {
-                            completedGames++;
-                          }
-                          final teams = data['teams'];
-                          if (teams is List) {
-                            totalTeams += teams.length;
-                            for (final team in teams) {
-                              if (team is Map<String, dynamic>) {
-                                final members = team['members'];
-                                if (members is List) {
-                                  totalPlayers += members.length;
-                                }
+                            for (final doc in games) {
+                              final data = doc.data();
+                              final status = (data['status'] ?? 'active')
+                                  .toString();
+                              if (status == 'active') {
+                                activeGames++;
+                              }
+                              if (status == 'completed') {
+                                completedGames++;
+                              }
+                              final teams = data['teams'];
+                              if (teams is List) {
+                                totalTeams += teams.length;
                               }
                             }
-                          }
-                        }
 
-                        return buildCustomGrid(
-                          activeGames: activeGames,
-                          totalTeams: totalTeams,
-                          totalPlayers: totalPlayers,
-                          completedGames: completedGames,
+                            return buildCustomGrid(
+                              activeGames: activeGames,
+                              totalTeams: totalTeams,
+                              totalPlayers: totalPlayers,
+                              completedGames: completedGames,
+                            );
+                          },
                         );
                       },
                     );
@@ -276,9 +297,7 @@ class ClubAdminDashboard extends StatelessWidget {
                 ),
               );
             }
-            return Column(
-              children: visible.map(_activityCard).toList(),
-            );
+            return Column(children: visible.map(_activityCard).toList());
           },
         );
       },
@@ -294,7 +313,8 @@ class ClubAdminDashboard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            // ignore: deprecated_member_use
+            color: AppColors.textBlack.withOpacity(0.06),
             blurRadius: 10,
             offset: Offset(0, 4),
           ),
@@ -318,10 +338,7 @@ class ClubAdminDashboard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.title,
-                  style: AppTextStyles.bodyMedium2,
-                ),
+                Text(item.title, style: AppTextStyles.bodyMedium2),
                 SizedBox(height: 4.h),
                 Text(
                   "${_formatActivityTime(item.when)}  •  ${item.meta}",
@@ -377,9 +394,5 @@ class _ActivityItem {
   final String meta;
   final DateTime when;
 
-  _ActivityItem({
-    required this.title,
-    required this.meta,
-    required this.when,
-  });
+  _ActivityItem({required this.title, required this.meta, required this.when});
 }

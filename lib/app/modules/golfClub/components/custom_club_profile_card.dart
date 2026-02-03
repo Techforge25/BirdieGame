@@ -26,7 +26,9 @@ Widget customProfileContainer({
           // Leading circle
           CircleAvatar(
             radius: 30,
-            backgroundImage: clubLogoPath != null && clubLogoPath.isNotEmpty
+            backgroundImage: clubLogoPath != null &&
+                    clubLogoPath.isNotEmpty &&
+                    File(clubLogoPath).existsSync()
                 ? FileImage(File(clubLogoPath))
                 : clubLogoBase64 != null && clubLogoBase64.isNotEmpty
                     ? MemoryImage(base64Decode(clubLogoBase64))

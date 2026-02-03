@@ -20,7 +20,7 @@ import 'package:intl/intl.dart';
 class ClubEditModal extends GetView<ClubEditController> {
   const ClubEditModal({super.key});
 
-  Widget _adminsList() {
+  Widget _adminsList({required bool isSuperAdmin}) {
     final clubId = controller.clubId;
     if (clubId == null || clubId.isEmpty) {
       return Text("No admins available", style: AppTextStyles.bodySmall);
@@ -65,31 +65,49 @@ class ClubEditModal extends GetView<ClubEditController> {
                   admins[index].id == FirebaseAuth.instance.currentUser?.uid;
               final isActive =
                   data['isActive'] == null ? true : data['isActive'] == true;
+              final canEdit = isSuperAdmin || isCurrentUser;
               return ListTile(
                 leading: const CircleAvatar(),
                 title: Text(name, style: AppTextStyles.bodyMedium),
                 subtitle: Text(email),
-                trailing: isCurrentUser
-                    ? IconButton(
-                        icon: Icon(
-                          Icons.arrow_forward_ios,
-                          size: 16,
-                          color: AppColors.primary,
-                        ),
-                        onPressed: () {
-                          Get.toNamed(
-                            Routes.ADMIN_VIEW,
-                            arguments: {
-                              'adminId': admins[index].id,
-                              'name': name,
-                              'email': email,
-                              'clubId': clubId,
-                              'clubName': controller.initialName,
-                              'role': 'club_admin',
-                              'isActive': isActive,
+                trailing: canEdit
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              Icons.edit_outlined,
+                              size: 18,
+                              color: AppColors.primary,
+                            ),
+                            onPressed: () {
+                              Get.toNamed(
+                                Routes.ADMIN_VIEW,
+                                arguments: {
+                                  'adminId': admins[index].id,
+                                  'name': name,
+                                  'email': email,
+                                  'clubId': clubId,
+                                  'clubName': controller.initialName,
+                                  'role': 'club_admin',
+                                  'isActive': isActive,
+                                },
+                              );
                             },
-                          );
-                        },
+                          ),
+                          if (isSuperAdmin && !isCurrentUser)
+                            IconButton(
+                              icon: Icon(
+                                Icons.remove_circle_outline,
+                                size: 18,
+                                color: AppColors.darkRed,
+                              ),
+                              onPressed: () =>
+                                  controller.removeAdminFromClub(
+                                    admins[index].id,
+                                  ),
+                            ),
+                        ],
                       )
                     : null,
               );
@@ -102,26 +120,38 @@ class ClubEditModal extends GetView<ClubEditController> {
 
   @override
   Widget build(BuildContext context) {
-    return CustomModal(
-      title: "Profile Edit",
-      content: SingleChildScrollView(
-        child: Column(
-          spacing: 10.0,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 5.h),
-            CustomFormField(
-              borderSide: BorderSide(
-                width: 1,
-                color: AppColors.borderColorLight,
-              ),
-              label: "Club Name",
-              hint: "Enter Club Name",
-              controller: controller.clubNameController,
-              labeltextStyle: AppTextStyles.bodyMedium.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final userStream = currentUserId.isEmpty
+        ? const Stream<DocumentSnapshot<Map<String, dynamic>>>.empty()
+        : FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUserId)
+            .snapshots();
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: userStream,
+      builder: (context, snapshot) {
+        final role = snapshot.data?.data()?['role']?.toString().toLowerCase();
+        final isSuperAdmin = role == 'super_admin' || role == 'superadmin';
+        return CustomModal(
+          title: "Profile Edit",
+          content: SingleChildScrollView(
+            child: Column(
+              spacing: 10.0,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 5.h),
+                CustomFormField(
+                  borderSide: BorderSide(
+                    width: 1,
+                    color: AppColors.borderColorLight,
+                  ),
+                  label: "Club Name",
+                  hint: "Enter Club Name",
+                  controller: controller.clubNameController,
+                  labeltextStyle: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
             CustomFormField(
               borderSide: BorderSide(
                 width: 1,
@@ -154,7 +184,9 @@ class ClubEditModal extends GetView<ClubEditController> {
                     height: 200.h,
                     child: Obx(() {
                       final path = controller.logoPath.value;
-                      if (path != null && path.isNotEmpty) {
+                      if (path != null &&
+                          path.isNotEmpty &&
+                          File(path).existsSync()) {
                         return ClipRRect(
                           borderRadius: BorderRadius.circular(8.r),
                           child: Image.file(
@@ -217,11 +249,11 @@ class ClubEditModal extends GetView<ClubEditController> {
                 ),
               ),
             ),
-            Text(
-              "Club Admins",
-              style: AppTextStyles.bodyLarge.copyWith(fontSize: 20.sp),
-            ),
-            _adminsList(),
+                Text(
+                  "Club Admins",
+                  style: AppTextStyles.bodyLarge.copyWith(fontSize: 20.sp),
+                ),
+                _adminsList(isSuperAdmin: isSuperAdmin),
             Obx(
               () => controller.showAddAdminForm.value
                   ? Container(
@@ -240,6 +272,46 @@ class ClubEditModal extends GetView<ClubEditController> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                          SizedBox(height: 12.h),
+                          Obx(() {
+                            final base64Photo =
+                                controller.adminPhotoBase64.value;
+                            final path = controller.adminPhotoPath.value;
+                            ImageProvider? imageProvider;
+                            if (base64Photo != null && base64Photo.isNotEmpty) {
+                              imageProvider =
+                                  MemoryImage(base64Decode(base64Photo));
+                            } else if (path != null &&
+                                path.isNotEmpty &&
+                                File(path).existsSync()) {
+                              imageProvider = FileImage(File(path));
+                            }
+                            return Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 26.r,
+                                  backgroundColor: AppColors.flashyGreen,
+                                  backgroundImage: imageProvider,
+                                  child: imageProvider == null
+                                      ? Icon(
+                                          Icons.person_outline,
+                                          color: AppColors.primary,
+                                        )
+                                      : null,
+                                ),
+                                SizedBox(width: 12.w),
+                                TextButton(
+                                  onPressed: controller.pickAdminPhoto,
+                                  child: Text(
+                                    "Upload Photo",
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }),
                           SizedBox(height: 12.h),
                           Row(
                             children: [
@@ -435,17 +507,19 @@ class ClubEditModal extends GetView<ClubEditController> {
                 ],
               ),
             ),
+              ],
+            ),
+          ),
+          actions: [
+            ModalFooterBtn(
+              text1: "Save Changes",
+              text2: "Cancel",
+              onTap1: controller.saveChanges,
+              onTap2: () => Get.back(),
+            ),
           ],
-        ),
-      ),
-      actions: [
-        ModalFooterBtn(
-          text1: "Save Changes",
-          text2: "Cancel",
-          onTap1: controller.saveChanges,
-          onTap2: () => Get.back(),
-        ),
-      ],
+        );
+      },
     );
   }
 }

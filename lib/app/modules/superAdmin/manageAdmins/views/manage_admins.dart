@@ -77,6 +77,7 @@ class ManageAdmins extends GetView<ManageAdminsController> {
                         final name = (data['displayName'] ?? 'Admin').toString();
                         final email = (data['email'] ?? '').toString();
                         final clubName = (data['clubName'] ?? '').toString();
+                        final clubId = (data['clubId'] ?? '').toString();
                         final role = (data['role'] ?? '').toString();
                         final isActive = data['isActive'] == null
                             ? true
@@ -99,6 +100,7 @@ class ManageAdmins extends GetView<ManageAdminsController> {
                                 'adminId': admins[index].id,
                                 'name': name,
                                 'email': email,
+                                'clubId': clubId,
                                 'clubName': clubName,
                                 'role': role,
                                 'isActive': isActive,

@@ -21,24 +21,25 @@ class AdminView extends GetView<AdminController> {
     final userStream = currentUserId.isEmpty
         ? const Stream<DocumentSnapshot<Map<String, dynamic>>>.empty()
         : FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUserId)
-            .snapshots();
+              .collection('users')
+              .doc(currentUserId)
+              .snapshots();
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: userStream,
       builder: (context, snapshot) {
         final role = snapshot.data?.data()?['role']?.toString().toLowerCase();
         final isSuperAdmin = role == 'super_admin' || role == 'superadmin';
+        controller.isSuperAdmin = isSuperAdmin;
+        if (isSuperAdmin) {
+          controller.loadClubsIfNeeded();
+        }
 
         if (!isSuperAdmin &&
             controller.adminId.isNotEmpty &&
             controller.adminId != currentUserId) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!context.mounted) return;
-            Get.snackbar(
-              "Access Denied",
-              "You can only edit your own profile",
-            );
+            Get.snackbar("Access Denied", "You can only edit your own profile");
             Get.back();
           });
           return const SizedBox.shrink();
@@ -51,8 +52,11 @@ class AdminView extends GetView<AdminController> {
               onPressed: () {
                 Get.back();
               },
-              icon:
-                  Icon(Icons.arrow_back_ios, size: 18, color: AppColors.primary),
+              icon: Icon(
+                Icons.arrow_back_ios,
+                size: 18,
+                color: AppColors.primary,
+              ),
             ),
             title: Text(
               "Admin Edit",
@@ -87,14 +91,17 @@ class AdminView extends GetView<AdminController> {
                         ),
                       ),
                       SizedBox(height: 25.h),
-                      Text("Edit Admin Details",
-                          style: AppTextStyles.bodyMedium2),
+                      Text(
+                        "Edit Admin Details",
+                        style: AppTextStyles.bodyMedium2,
+                      ),
                       SizedBox(height: 20.h),
 
                       CustomFormField(
                         label: "Full Name",
-                        borderSide:
-                            BorderSide(color: AppColors.borderColorLight),
+                        borderSide: BorderSide(
+                          color: AppColors.borderColorLight,
+                        ),
                         hint: "Admin Name",
                         controller: controller.nameController,
                         borderRadius: BorderRadius.circular(12),
@@ -106,8 +113,9 @@ class AdminView extends GetView<AdminController> {
                       SizedBox(height: 12.h),
                       CustomFormField(
                         label: "Email",
-                        borderSide:
-                            BorderSide(color: AppColors.borderColorLight),
+                        borderSide: BorderSide(
+                          color: AppColors.borderColorLight,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                         hint: "Admin email",
                         controller: controller.emailController,
@@ -117,14 +125,84 @@ class AdminView extends GetView<AdminController> {
                       ),
 
                       SizedBox(height: 12.h),
+                      if (isSuperAdmin) ...[
+                        Text("Assign Club", style: AppTextStyles.bodyMedium),
+                        SizedBox(height: 8.h),
+                        Obx(() {
+                          final clubs = controller.clubs;
+                          final currentId =
+                              controller.selectedClubId.value ??
+                              (controller.clubId.isNotEmpty
+                                  ? controller.clubId
+                                  : '');
+                          final currentName =
+                              (controller.selectedClubName.value ?? '')
+                                  .isNotEmpty
+                              ? controller.selectedClubName.value!
+                              : controller.clubNameController.text.trim();
+                          final items = <DropdownMenuItem<String>>[
+                            const DropdownMenuItem(
+                              value: '',
+                              child: Text("Unassigned"),
+                            ),
+                            ...clubs.map(
+                              (club) => DropdownMenuItem(
+                                value: club['id'],
+                                child: Text(
+                                  (club['name'] ?? '').toString().isEmpty
+                                      ? 'Unnamed Club'
+                                      : (club['name'] ?? '').toString(),
+                                ),
+                              ),
+                            ),
+                          ];
+                          final hasCurrent =
+                              currentId.isNotEmpty &&
+                              clubs.any((club) => club['id'] == currentId);
+                          if (currentId.isNotEmpty && !hasCurrent) {
+                            items.add(
+                              DropdownMenuItem(
+                                value: currentId,
+                                child: Text(
+                                  currentName.isEmpty
+                                      ? 'Current Club'
+                                      : currentName,
+                                ),
+                              ),
+                            );
+                          }
+                          return DropdownButtonFormField<String>(
+                            value: currentId,
+                            items: items,
+                            onChanged: controller.setSelectedClub,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.borderColorLight,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.borderColorLight,
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                        SizedBox(height: 12.h),
+                      ],
+
                       CustomFormField(
                         label: "Club Name",
-                        borderSide:
-                            BorderSide(color: AppColors.borderColorLight),
+                        borderSide: BorderSide(
+                          color: AppColors.borderColorLight,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                         hint: "Admin Club",
                         controller: controller.clubNameController,
-                        enable: isSuperAdmin,
+                        enable: !isSuperAdmin,
                         labeltextStyle: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -133,8 +211,9 @@ class AdminView extends GetView<AdminController> {
                       SizedBox(height: 12.h),
                       CustomFormField(
                         label: "Role",
-                        borderSide:
-                            BorderSide(color: AppColors.borderColorLight),
+                        borderSide: BorderSide(
+                          color: AppColors.borderColorLight,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                         hint: "Admin Role",
                         controller: controller.roleController,
@@ -156,8 +235,10 @@ class AdminView extends GetView<AdminController> {
 
                       if (isSuperAdmin) ...[
                         SizedBox(height: 20.h),
-                        Text("Account Actions",
-                            style: AppTextStyles.bodyMedium2),
+                        Text(
+                          "Account Actions",
+                          style: AppTextStyles.bodyMedium2,
+                        ),
                         SizedBox(height: 10.h),
                         _buildAccountActionCards(
                           title: "Reset Password",

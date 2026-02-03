@@ -204,12 +204,14 @@ class AddClubsScreen extends GetView<AddClubsController> {
                               if (path != null && path.isNotEmpty) {
                                 return ClipRRect(
                                   borderRadius: BorderRadius.circular(8.r),
-                                  child: Image.file(
-                                    File(path),
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                  ),
+                                  child: File(path).existsSync()
+                                      ? Image.file(
+                                          File(path),
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                        )
+                                      : const SizedBox.shrink(),
                                 );
                               }
                               final base64Logo = controller.logoBase64.value;

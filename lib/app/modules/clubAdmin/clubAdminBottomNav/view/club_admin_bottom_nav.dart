@@ -21,42 +21,47 @@ class ClubAdminBottomNav extends StatelessWidget {
       },
       child: Scaffold(
         body: Obx(() => controller.screens[controller.currentIndex.value]),
-      
+
         bottomNavigationBar: Container(
-          padding: const EdgeInsets.symmetric(vertical: 26),
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 6),
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
             boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _navItem(
-                icon: Icons.dashboard_outlined,
-                label: "Home",
-                index: 0,
+              Expanded(
+                child: _navItem(
+                  icon: Icons.dashboard_outlined,
+                  label: "Home",
+                  index: 0,
                 ),
-              _navItem(
-                icon: CupertinoIcons.game_controller,
-                label: "Games",
-                index: 1,
-                ),
-              _navItem(
-                icon: Icons.sports_golf,
-                label: "New Game",
-                index: 2,
-                ),
-              _navItem(
-                icon: Icons.emoji_events_outlined,
-                label: "Scores",
-                index: 3,
               ),
-              _navItem(
-                icon: Icons.person_outline,
-                label: "Profile", 
-                index: 4,
+              Expanded(
+                child: _navItem(
+                  icon: CupertinoIcons.game_controller,
+                  label: "Games",
+                  index: 1,
                 ),
+              ),
+              Expanded(
+                child: _navItem(
+                  icon: Icons.sports_golf,
+                  label: "New Game",
+                  index: 2,
+                ),
+              ),
+              Expanded(
+                child: _navItem(icon: Icons.groups, label: "Team", index: 3),
+              ),
+              Expanded(
+                child: _navItem(
+                  icon: Icons.person_outline,
+                  label: "Profile",
+                  index: 4,
+                ),
+              ),
             ],
           ),
         ),
@@ -108,6 +113,9 @@ class ClubAdminBottomNav extends StatelessWidget {
                     ? AppColors.primary
                     : AppColors.bottomIconColor,
               ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

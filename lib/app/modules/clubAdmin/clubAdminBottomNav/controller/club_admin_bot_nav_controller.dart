@@ -3,9 +3,10 @@ import 'dart:async';
 import 'package:bierdygame/app/modules/clubAdmin/dashboard/view/dashboard_view.dart';
 import 'package:bierdygame/app/modules/clubAdmin/reportsAndAnalytics/view/club_admin_reports_and_analytics_view.dart';
 import 'package:bierdygame/app/modules/clubAdmin/games/view/manage_games.dart';
+import 'package:bierdygame/app/modules/clubAdmin/games/controller/manage_clubs_controller.dart';
 import 'package:bierdygame/app/modules/clubAdmin/newGame/view/new_game_view.dart';
 import 'package:bierdygame/app/modules/clubAdmin/newGame/controller/new_game_controller.dart';
-import 'package:bierdygame/app/modules/clubAdmin/scores/view/scores_view.dart';
+import 'package:bierdygame/app/modules/clubAdmin/create_team/view/create_team_view.dart';
 import 'package:bierdygame/app/modules/golfClub/golfClubProfile/golf_club_profile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -30,7 +31,7 @@ class ClubAdminBottomNavController extends GetxController {
             : const ClubAdminDashboard(),
         ManageClubsGames(),
         NewGameView(),
-        ScoresView(),
+        const CreateTeamView(),
         GolfClubProfilePage(
           clubId: _clubId.value ?? '',
           nameOfClub: _clubName.value ?? '',
@@ -43,6 +44,9 @@ class ClubAdminBottomNavController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    if (!Get.isRegistered<ManageClubsController>()) {
+      Get.put(ManageClubsController(), permanent: true);
+    }
     _loadClubStatus();
   }
 

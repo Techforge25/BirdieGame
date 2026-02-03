@@ -11,6 +11,7 @@ import 'package:bierdygame/app/widgets/custom_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 class ManageClubsGames extends GetView<ManageClubsController> {
   ManageClubsGames({super.key});
@@ -123,7 +124,10 @@ class ManageClubsGames extends GetView<ManageClubsController> {
             ],
           ),
           const SizedBox(height: 4),
-          Text(game.date, style: TextStyle(color: Colors.grey.shade600)),
+          Text(
+            _formatGameDateTime(game.date, game.time),
+            style: TextStyle(color: Colors.grey.shade600),
+          ),
           const SizedBox(height: 10),
 
           // PASSKEY
@@ -165,8 +169,11 @@ class ManageClubsGames extends GetView<ManageClubsController> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.visibility,
-                          color: AppColors.borderColor, size: 18),
+                      Icon(
+                        Icons.visibility,
+                        color: AppColors.borderColor,
+                        size: 18,
+                      ),
                       SizedBox(width: 4.w),
                       Text(
                         "View",
@@ -179,25 +186,24 @@ class ManageClubsGames extends GetView<ManageClubsController> {
                   ),
                 ),
               ),
-              Container(
-                height: 15.h,
-                width: 2.w,
-                color: AppColors.borderColor,
-              ),
+              Container(height: 15.h, width: 2.w, color: AppColors.borderColor),
               if (game.status == GameStatus.draft) ...[
                 Expanded(
                   child: InkWell(
                     onTap: () async {
                       final nav = Get.find<ClubAdminBottomNavController>();
-                    if (!nav.guardClubAccess()) return;
-                    await _ensureNewGameController().loadDraftById(game.id);
-                    nav.changeTab(2);
-                  },
+                      if (!nav.guardClubAccess()) return;
+                      await _ensureNewGameController().loadDraftById(game.id);
+                      nav.changeTab(2);
+                    },
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.edit_outlined,
-                            color: AppColors.borderColor, size: 18),
+                        Icon(
+                          Icons.edit_outlined,
+                          color: AppColors.borderColor,
+                          size: 18,
+                        ),
                         SizedBox(width: 4.w),
                         Text(
                           "Edit",
@@ -226,8 +232,11 @@ class ManageClubsGames extends GetView<ManageClubsController> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.delete_outline_outlined,
-                          color: AppColors.darkRed, size: 18),
+                      Icon(
+                        Icons.delete_outline_outlined,
+                        color: AppColors.darkRed,
+                        size: 18,
+                      ),
                       SizedBox(width: 4.w),
                       Text(
                         "Remove",
@@ -245,6 +254,27 @@ class ManageClubsGames extends GetView<ManageClubsController> {
         ],
       ),
     );
+  }
+
+  String _formatGameDateTime(String date, String time) {
+    if (date.isEmpty) return '';
+    try {
+      final dateValue = DateFormat('yyyy-MM-dd').parse(date);
+      if (time.isNotEmpty) {
+        final timeValue = DateFormat('hh:mm a').parse(time);
+        final combined = DateTime(
+          dateValue.year,
+          dateValue.month,
+          dateValue.day,
+          timeValue.hour,
+          timeValue.minute,
+        );
+        return DateFormat('MMM d, yyyy • h:mm a').format(combined);
+      }
+      return DateFormat('MMM d, yyyy').format(dateValue);
+    } catch (_) {
+      return time.isNotEmpty ? '$date • $time' : date;
+    }
   }
 
   NewGameController _ensureNewGameController() {
