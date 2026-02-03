@@ -7,7 +7,7 @@ import 'package:get/get.dart';
 
 class AuthController extends GetxController {
   AuthController({required AuthRepository authRepository})
-      : _authRepository = authRepository;
+    : _authRepository = authRepository;
 
   final AuthRepository _authRepository;
 
@@ -18,7 +18,6 @@ class AuthController extends GetxController {
   final confirmPasswordController = TextEditingController();
   final isPasswordHidden = true.obs;
   final isConfirmPasswordHidden = true.obs;
-
 
   var isLoading = false.obs;
 
@@ -61,9 +60,12 @@ class AuthController extends GetxController {
 
       // Navigate after signup
       // Get.offAll(() => HomeView());
-
     } on Exception catch (e) {
-      Get.snackbar("Signup Failed", e.toString(),duration: Duration(seconds: 11));
+      Get.snackbar(
+        "Signup Failed",
+        e.toString(),
+        duration: Duration(seconds: 11),
+      );
     } finally {
       isLoading.value = false;
     }
@@ -90,12 +92,20 @@ class AuthController extends GetxController {
         return;
       }
 
-      final userDoc =
-          await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
       final data = userDoc.data() ?? {};
-      final isActive = data['isActive'] == null ? true : data['isActive'] == true;
+      final isActive = data['isActive'] == null
+          ? true
+          : data['isActive'] == true;
       final status = (data['status'] ?? '').toString().toLowerCase();
-      final isSuspended = !isActive || status == 'inactive' || status == 'suspended' || status == 'blocked';
+      final isSuspended =
+          !isActive ||
+          status == 'inactive' ||
+          status == 'suspended' ||
+          status == 'blocked';
       if (isSuspended) {
         await FirebaseAuth.instance.signOut();
         Get.snackbar(
@@ -113,8 +123,8 @@ class AuthController extends GetxController {
       }
 
       Get.offAllNamed(route);
-    } on Exception catch (e) {
-      Get.snackbar("Login Failed", e.toString());
+    } on Exception {
+      Get.snackbar("Login Failed", "Your Email or Password is Incorrect");
     } finally {
       isLoading.value = false;
     }
@@ -134,7 +144,6 @@ class AuthController extends GetxController {
         return null;
     }
   }
-  
 
   @override
   void onClose() {

@@ -7,9 +7,12 @@ import 'package:bierdygame/app/modules/player/playerJoinGame/widgets/join_game_c
 import 'package:bierdygame/app/theme/app_colors.dart';
 import 'package:bierdygame/app/theme/app_text_styles.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'dart:convert';
 
 import '../controller/player_dashboard_controller.dart';
 
@@ -18,7 +21,10 @@ class PlayerDashboardView extends GetView<PlayerDashboardController> {
 
   @override
   Widget build(BuildContext context) {
-    String username = "Alex";
+    final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final userStream = userId.isEmpty
+        ? const Stream<DocumentSnapshot<Map<String, dynamic>>>.empty()
+        : FirebaseFirestore.instance.collection('users').doc(userId).snapshots();
 
     return Scaffold(
       appBar: AppBar(
@@ -27,27 +33,39 @@ class PlayerDashboardView extends GetView<PlayerDashboardController> {
         titleSpacing: 0,
         title: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              const CircleAvatar(
-                radius: 22,
-                backgroundImage: AssetImage("assets/images/dashboard_img.png"),
-              ),
-              const SizedBox(width: 12),
-              Text("Welcome, $username", style: AppTextStyles.bodyMedium2),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.primary,
-                ),
-                child: Icon(
-                  Icons.notifications_outlined,
-                  color: AppColors.white,
-                ),
-              ),
-            ],
+          child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: userStream,
+            builder: (context, snapshot) {
+              final data = snapshot.data?.data() ?? {};
+              final name = (data['displayName'] ?? data['name'] ?? 'Player')
+                  .toString();
+              final photoBase64 = (data['photoBase64'] ?? '').toString();
+              return Row(
+                children: [
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundImage: photoBase64.isNotEmpty
+                        ? MemoryImage(base64Decode(photoBase64))
+                        : const AssetImage("assets/images/dashboard_img.png")
+                            as ImageProvider,
+                  ),
+                  const SizedBox(width: 12),
+                  Text("Welcome, $name", style: AppTextStyles.bodyMedium2),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.primary,
+                    ),
+                    child: Icon(
+                      Icons.notifications_outlined,
+                      color: AppColors.white,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),

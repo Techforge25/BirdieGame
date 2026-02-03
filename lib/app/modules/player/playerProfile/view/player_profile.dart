@@ -1,9 +1,12 @@
 import 'package:bierdygame/app/modules/player/playerProfile/controller/player_profile_controller.dart';
 import 'package:bierdygame/app/theme/app_colors.dart';
 import 'package:bierdygame/app/theme/app_text_styles.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'dart:convert';
 
 class PlayerProfile extends GetView<PlayerProfileController> {
   const PlayerProfile({super.key});
@@ -25,18 +28,45 @@ class PlayerProfile extends GetView<PlayerProfileController> {
             Center(
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 50.r,
-                    backgroundImage:
-                        AssetImage("assets/images/dashboard_img.png"),
+                  StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                    stream: FirebaseAuth.instance.currentUser == null
+                        ? const Stream<
+                            DocumentSnapshot<Map<String, dynamic>>
+                          >.empty()
+                        : FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(FirebaseAuth.instance.currentUser!.uid)
+                              .snapshots(),
+                    builder: (context, snapshot) {
+                      final data = snapshot.data?.data() ?? {};
+                      final name =
+                          (data['displayName'] ?? data['name'] ?? 'Player')
+                              .toString();
+                      final email = (data['email'] ?? '').toString();
+                      final photoBase64 = (data['photoBase64'] ?? '')
+                          .toString();
+                      return Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 50.r,
+                            backgroundImage: photoBase64.isNotEmpty
+                                ? MemoryImage(base64Decode(photoBase64))
+                                : const AssetImage(
+                                        "assets/images/dashboard_img.png",
+                                      )
+                                      as ImageProvider,
+                          ),
+                          Text(
+                            name,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.textBlack,
+                            ),
+                          ),
+                          if (email.isNotEmpty) Text(email),
+                        ],
+                      );
+                    },
                   ),
-                  Text(
-                    "Player Name",
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textBlack,
-                    ),
-                  ),
-                  Text("player123@gmail.com")
                 ],
               ),
             ),
@@ -75,6 +105,7 @@ class PlayerProfile extends GetView<PlayerProfileController> {
       ),
     );
   }
+
   Widget _buildProfileContainer({
     required String name,
     required VoidCallback onTap,

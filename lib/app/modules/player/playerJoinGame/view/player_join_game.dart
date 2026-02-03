@@ -1,4 +1,5 @@
 import 'package:bierdygame/app/modules/player/playerDashBoard/view/widget/continue_game_container.dart';
+import 'package:bierdygame/app/modules/player/playerJoinGame/controller/player_join_game_controller.dart';
 import 'package:bierdygame/app/modules/player/playerJoinGame/view/game_board.dart';
 import 'package:bierdygame/app/modules/player/playerJoinGame/widgets/join_game_card.dart';
 import 'package:bierdygame/app/theme/app_colors.dart';
@@ -16,6 +17,9 @@ class PlayerJoinGame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.isRegistered<PlayerJoinGameController>()
+        ? Get.find<PlayerJoinGameController>()
+        : Get.put(PlayerJoinGameController());
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.scaffoldBackground,
@@ -39,7 +43,7 @@ class PlayerJoinGame extends StatelessWidget {
             SizedBox(height: 10.h),
             ContinueGameContainer(),
             SizedBox(height: 20.h),
-            Text("Active Games", style: AppTextStyles.subHeading),
+            Text("Join Game", style: AppTextStyles.subHeading),
             Container(
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -50,11 +54,7 @@ class PlayerJoinGame extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("GreenShot Tournament", style: AppTextStyles.bodyMedium),
-                  Text(
-                    'Summit Point Golf Club - Sat, July 15 @ 9 : 00 AM',
-                    style: AppTextStyles.bodySmall.copyWith(fontSize: 10),
-                  ),
+                  Text("Enter Passkey", style: AppTextStyles.bodyMedium),
                   SizedBox(height: 10.h),
                   Row(
                     children: [

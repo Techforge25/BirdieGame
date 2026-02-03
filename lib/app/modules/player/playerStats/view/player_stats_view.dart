@@ -5,10 +5,13 @@ import 'package:bierdygame/app/modules/player/playerStats/widgets/teams_play_wit
 import 'package:bierdygame/app/theme/app_colors.dart';
 import 'package:bierdygame/app/theme/app_text_styles.dart';
 import 'package:bierdygame/app/widgets/custom_club_detail_grid.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
+import 'dart:convert';
 
 class PlayerStatsView extends GetView<PlayerStatsController> {
   final VoidCallback onBack;
@@ -45,42 +48,122 @@ class PlayerStatsView extends GetView<PlayerStatsController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundImage: AssetImage(
-                          "assets/images/dashboard_img.png",
+                StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                  stream: FirebaseAuth.instance.currentUser == null
+                      ? const Stream<
+                          DocumentSnapshot<Map<String, dynamic>>>.empty()
+                      : FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(FirebaseAuth.instance.currentUser!.uid)
+                          .snapshots(),
+                  builder: (context, snapshot) {
+                    final data = snapshot.data?.data() ?? {};
+                    final name =
+                        (data['displayName'] ?? data['name'] ?? 'Player')
+                            .toString();
+                    final email = (data['email'] ?? '').toString();
+                    final photoBase64 = (data['photoBase64'] ?? '').toString();
+                    final totalGames = (data['totalGames'] ?? 0).toString();
+                    final avgBirdies = (data['avgBirdies'] ?? 0).toString();
+                    final totalWins = (data['totalWins'] ?? 0).toString();
+                    final highestBirdie =
+                        (data['highestBirdie'] ?? 0).toString();
+                    final teamBirdies = (data['teamBirdies'] ?? 0).toString();
+                    return Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundImage: photoBase64.isNotEmpty
+                              ? MemoryImage(base64Decode(photoBase64))
+                              : const AssetImage(
+                                      "assets/images/dashboard_img.png")
+                                  as ImageProvider,
                         ),
-                      ),
-                      Text(
-                        (playerData?['name'] ?? "Player Name").toString(),
-                        style: AppTextStyles.bodyLarge.copyWith(fontSize: 18),
-                      ),
-                      if ((playerData?['email'] ?? '').toString().isNotEmpty)
                         Text(
-                          (playerData?['email'] ?? '').toString(),
-                          style: AppTextStyles.bodySmall,
+                          name,
+                          style: AppTextStyles.bodyLarge.copyWith(fontSize: 18),
                         ),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Color(0xffCFE8DC),
-                          borderRadius: BorderRadius.circular(20.r),
-                        ),
-                        child: Text(
-                          "Active button",
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.primary,
+                        if (email.isNotEmpty)
+                          Text(
+                            email,
+                            style: AppTextStyles.bodySmall,
+                          ),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Color(0xffCFE8DC),
+                            borderRadius: BorderRadius.circular(20.r),
+                          ),
+                          child: Text(
+                            "Active",
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.primary,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                        SizedBox(height: 10.h),
+                        Container(
+                          padding: EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xffCFE8DC), Color(0xffDCEDC8)],
+                            ),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Team Birdies",
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: AppColors.darkGreen,
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  Text(
+                                    teamBirdies,
+                                    style: AppTextStyles.bodyLarge.copyWith(
+                                      color: AppColors.darkGreen,
+                                    ),
+                                  ),
+                                  SizedBox(width: 10.w),
+                                  Text(
+                                    "All Time",
+                                    style: AppTextStyles.bodyMedium2.copyWith(
+                                      color: AppColors.darkGreen,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 10.h),
+                        ClubsDetailGrid(
+                          value1: totalGames,
+                          value2: avgBirdies,
+                          value3: totalWins,
+                          value4: highestBirdie,
+                          color: AppColors.darkGreen,
+                          icon1: Icons.sports_golf_outlined,
+                          icon2: Icons.trending_up_outlined,
+                          icon3: FontAwesomeIcons.trophy,
+                          icon4: Icons.star_border_outlined,
+                          title1: "Total Games",
+                          title2: "Avg Birdies",
+                          title3: "Total Wins",
+                          title4: "Highest Birdie",
+                          textColor: AppColors.textBlack,
+                        ),
+                      ],
+                    );
+                  },
                 ),
                 SizedBox(height: 10.h),
                 Align(
@@ -91,62 +174,6 @@ class PlayerStatsView extends GetView<PlayerStatsController> {
                   ),
                 ),
                 SizedBox(height: 10.h),
-                Container(
-                  padding: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xffCFE8DC), Color(0xffDCEDC8)],
-                    ),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Team Birdies",
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.darkGreen,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          Text(
-                            "315",
-                            style: AppTextStyles.bodyLarge.copyWith(
-                              color: AppColors.darkGreen,
-                            ),
-                          ),
-                          SizedBox(width: 10.w),
-                          Text(
-                            "All Time",
-                            style: AppTextStyles.bodyMedium2.copyWith(
-                              color: AppColors.darkGreen,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 10.h),
-                ClubsDetailGrid(
-                  value1: 0.toString(),
-                  value2: 1.toString(),
-                  value3: 2.toString(),
-                  value4: 9.toString(),
-                  color: AppColors.darkGreen,
-                  icon1: Icons.sports_golf_outlined,
-                  icon2: Icons.trending_up_outlined,
-                  icon3: FontAwesomeIcons.trophy,
-                  icon4: Icons.star_border_outlined,
-                  title1: "Total Games",
-                  title2: "Avg Birdies",
-                  title3: "Total Wins",
-                  title4: "Highest Birdie",
-                  textColor: AppColors.textBlack,
-                ),
                 SizedBox(height: 8.h),
                 PerformanceOverviewContainer(),
                 SizedBox(height: 8.h),

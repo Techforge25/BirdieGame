@@ -324,24 +324,36 @@ class CreateTeamController extends GetxController {
     if (teamId == null || teamId.isEmpty || clubId == null || clubId.isEmpty) {
       return;
     }
-    final memberPayload = {
-      'uid': player.uid,
-      'name': player.name,
-      'email': player.email,
-    };
-    await _firestore
+    final clubTeamRef = _firestore
         .collection('clubs')
         .doc(clubId)
         .collection('club_teams')
-        .doc(teamId)
-        .set({
-          'members': FieldValue.arrayRemove([memberPayload]),
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-    await _firestore.collection('teams').doc(teamId).set({
-      'members': FieldValue.arrayRemove([memberPayload]),
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+        .doc(teamId);
+    final globalTeamRef = _firestore.collection('teams').doc(teamId);
+    final clubSnap = await clubTeamRef.get();
+    if (clubSnap.exists) {
+      final data = clubSnap.data();
+      final members = (data?['members'] is List)
+          ? List<Map<String, dynamic>>.from(data?['members'])
+          : <Map<String, dynamic>>[];
+      members.removeWhere((m) => m['uid']?.toString() == player.uid);
+      await clubTeamRef.set({
+        'members': members,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
+    final globalSnap = await globalTeamRef.get();
+    if (globalSnap.exists) {
+      final data = globalSnap.data();
+      final members = (data?['members'] is List)
+          ? List<Map<String, dynamic>>.from(data?['members'])
+          : <Map<String, dynamic>>[];
+      members.removeWhere((m) => m['uid']?.toString() == player.uid);
+      await globalTeamRef.set({
+        'members': members,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
   }
 
   void selectEmoji(int index) {
@@ -385,8 +397,12 @@ class CreateTeamController extends GetxController {
         .collection('club_teams');
     final oldSnap = await oldRef.get();
     if (oldSnap.docs.isEmpty) return;
+    final batch = _firestore.batch();
     for (final doc in oldSnap.docs) {
-      await newRef.doc(doc.id).set(doc.data(), SetOptions(merge: true));
+      batch.set(newRef.doc(doc.id), doc.data(), SetOptions(merge: true));
+    }
+    await batch.commit();
+    for (final doc in oldSnap.docs) {
       await oldRef.doc(doc.id).delete();
     }
   }

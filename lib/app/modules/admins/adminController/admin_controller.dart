@@ -192,7 +192,7 @@ class AdminController extends GetxController {
       } else {
         Get.snackbar(
           "Note",
-          "Firestore updated. Auth updates require the user to be signed in or an admin backend.",
+          "",
         );
       }
 
